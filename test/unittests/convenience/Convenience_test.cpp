@@ -101,7 +101,7 @@ TEST(Convenience, shortPath)
 
   serviceVectorsSet(getV, NULL, NULL, NULL, NULL, NULL, badVerbV);
 
-  ci1.apiVersion = V1;
+  ci1.apiVersion  = V1;  
   out = orion::requestServe(&ci1);
   EXPECT_STREQ(expectedBuf, out.c_str());
 

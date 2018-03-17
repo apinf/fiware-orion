@@ -191,6 +191,8 @@ TEST(DiscoverContextAvailabilityRequest, unsupportedAttributeForEntityId_json)
 
   ci.inMimeType  = JSON;
   ci.outMimeType = JSON;
+  ci.apiVersion  = V1;
+  ci.requestType = DiscoverContextAvailability;
 
   EXPECT_EQ("OK", testDataFromFile(testBuf, sizeof(testBuf), inFile)) << "Error getting test data from '" << inFile << "'";
 

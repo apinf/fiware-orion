@@ -203,7 +203,6 @@ std::string jsonTreat
     std::string errorReply =
       restErrorReplyGet(ciP,
                         "",
-                        requestType(request),
                         SccBadRequest,
                         std::string("Sorry, no request treating object found for RequestType /") +
                         requestType(request) + "/");
@@ -235,7 +234,6 @@ std::string jsonTreat
   {
     std::string errorReply  = restErrorReplyGet(ciP,
                                                 "",
-                                                reqP->keyword,
                                                 SccBadRequest,
                                                 std::string("JSON Parse Error"));
 
@@ -247,7 +245,6 @@ std::string jsonTreat
   {
     std::string errorReply  = restErrorReplyGet(ciP,
                                                 "",
-                                                reqP->keyword,
                                                 SccBadRequest,
                                                 std::string("JSON Generic Error"));
 
@@ -262,7 +259,7 @@ std::string jsonTreat
 
     ciP->httpStatusCode = SccBadRequest;
 
-    std::string answer = restErrorReplyGet(ciP, "", payloadWord, ciP->httpStatusCode, res);
+    std::string answer = restErrorReplyGet(ciP, "", ciP->httpStatusCode, res);
     return answer;
   }
 

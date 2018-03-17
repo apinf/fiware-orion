@@ -163,6 +163,8 @@ TEST(RestService, noSuchServiceAndNotFound)
   ci.inMimeType     = JSON;
   ci.payload        = testBuf;
   ci.payloadSize    = strlen(testBuf);
+  ci.requestType    = DiscoverContextAvailability;
+  ci.apiVersion     = V1;
 
   serviceVectorsSet(NULL, NULL, postV, NULL, NULL, NULL, badVerbs);
   out = orion::requestServe(&ci);

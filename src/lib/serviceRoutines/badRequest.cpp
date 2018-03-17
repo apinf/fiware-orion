@@ -55,7 +55,6 @@ std::string badRequest
 
   answer = restErrorReplyGet(ciP,
                              "",
-                             ciP->payloadWord,
                              SccBadRequest,
                              "service not found");
 

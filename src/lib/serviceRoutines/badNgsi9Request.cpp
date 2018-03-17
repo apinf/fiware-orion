@@ -55,7 +55,6 @@ std::string badNgsi9Request
 
   answer = restErrorReplyGet(ciP,
                              "",
-                             ciP->payloadWord,
                              SccBadRequest,
                              "service not found");
 

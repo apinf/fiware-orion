@@ -725,7 +725,7 @@ static std::string restService(ConnectionInfo* ciP, RestService* serviceV)
   alarmMgr.badInput(clientIp, details);
 
   ciP->httpStatusCode = SccBadRequest;
-  std::string answer = restErrorReplyGet(ciP, "", ciP->payloadWord, SccBadRequest, std::string("service not found"));
+  std::string answer = restErrorReplyGet(ciP, "", SccBadRequest, std::string("service not found"));
   restReply(ciP, answer);
 
   compV.clear();

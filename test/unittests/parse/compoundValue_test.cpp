@@ -73,8 +73,11 @@ TEST(compoundValue, updateUnknownPath)
 
   EXPECT_EQ("OK", testDataFromFile(testBuf, sizeof(testBuf), inFileJson)) << "Error getting test data from '" << inFileJson << "'";
   EXPECT_EQ("OK", testDataFromFile(expectedBuf, sizeof(expectedBuf), outFileJson)) << "Error getting test data from '" << outFileJson << "'";
+
   ciJson.inMimeType  = JSON;
   ciJson.outMimeType = JSON;
+  ciJson.requestType = UpdateContext;
+  
   result = jsonTreat(testBuf, &ciJson, &reqData, UpdateContext, "updateContextRequest", NULL);
   EXPECT_STREQ(expectedBuf, result.c_str());
 

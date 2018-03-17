@@ -943,7 +943,7 @@ static int contentTypeCheck(ConnectionInfo* ciP)
   {
     std::string details = "Content-Type header not used, default application/octet-stream is not supported";
     ciP->httpStatusCode = SccUnsupportedMediaType;
-    ciP->answer = restErrorReplyGet(ciP, "", "OrionError", SccUnsupportedMediaType, details);
+    ciP->answer = restErrorReplyGet(ciP, "", SccUnsupportedMediaType, details);
     ciP->httpStatusCode = SccUnsupportedMediaType;
 
     return 1;
@@ -954,7 +954,7 @@ static int contentTypeCheck(ConnectionInfo* ciP)
   {
     std::string details = std::string("not supported content type: ") + ciP->httpHeaders.contentType;
     ciP->httpStatusCode = SccUnsupportedMediaType;
-    ciP->answer = restErrorReplyGet(ciP, "", "OrionError", SccUnsupportedMediaType, details);
+    ciP->answer = restErrorReplyGet(ciP, "", SccUnsupportedMediaType, details);
     ciP->httpStatusCode = SccUnsupportedMediaType;
     return 1;
   }
@@ -965,7 +965,7 @@ static int contentTypeCheck(ConnectionInfo* ciP)
   {
     std::string details = std::string("not supported content type: ") + ciP->httpHeaders.contentType;
     ciP->httpStatusCode = SccUnsupportedMediaType;
-    ciP->answer = restErrorReplyGet(ciP, "", "OrionError", SccUnsupportedMediaType, details);
+    ciP->answer = restErrorReplyGet(ciP, "", SccUnsupportedMediaType, details);
     ciP->httpStatusCode = SccUnsupportedMediaType;
     return 1;
   }
@@ -1451,7 +1451,7 @@ static int connectionTreat
 
     alarmMgr.badInput(clientIp, details);
 
-    ciP->answer         = restErrorReplyGet(ciP, "", ciP->url, SccRequestEntityTooLarge, details);
+    ciP->answer         = restErrorReplyGet(ciP, "", SccRequestEntityTooLarge, details);
     ciP->httpStatusCode = SccRequestEntityTooLarge;
   }
 
@@ -1545,7 +1545,7 @@ static int connectionTreat
       (ciP->httpHeaders.contentLength == 0) &&
       ((strncasecmp(ciP->url.c_str(), "/log/", 5) != 0) && (strncasecmp(ciP->url.c_str(), "/admin/log", 10) != 0)))
   {
-    std::string errorMsg = restErrorReplyGet(ciP, "", url, SccContentLengthRequired, "Zero/No Content-Length in PUT/POST/PATCH request");
+    std::string errorMsg = restErrorReplyGet(ciP, "", SccContentLengthRequired, "Zero/No Content-Length in PUT/POST/PATCH request");
 
     ciP->httpStatusCode  = SccContentLengthRequired;
     restReply(ciP, errorMsg);
