@@ -151,8 +151,6 @@ std::string payloadParse
   LM_T(LmtParsedPayload, ("parsing data for service '%s'. Method: '%s'", requestType(service->request), ciP->method.c_str()));
   LM_T(LmtParsedPayload, ("outMimeType: %s", mimeTypeToString(ciP->outMimeType)));
 
-  ciP->requestType = service->request;
-
   if (ciP->inMimeType == JSON)
   {
     if (ciP->apiVersion == V2)
@@ -494,7 +492,7 @@ static bool compErrorDetect
 * And lastly, if there is a badVerb RestService vector, but still no service routine is found, then we create a "service not recognized"
 * response. See comments incrusted in the function as well.
 */
-static std::string restService(ConnectionInfo* ciP, RestService* serviceV)
+static std::string restService(ConnectionInfo* ciP, RestService* serviceV, RestService* serviceP)
 {
   std::vector<std::string>  compV;
   int                       components;
@@ -536,7 +534,8 @@ static std::string restService(ConnectionInfo* ciP, RestService* serviceV)
   //
   // Lookup the requested service
   //
-  
+  // FIXME: Already have serviceP - no need to look it up twice!!!
+  //
   for (unsigned int ix = 0; serviceV[ix].treat != NULL; ++ix)
   {
     if ((serviceV[ix].components != 0) && (serviceV[ix].components != components))
@@ -545,6 +544,7 @@ static std::string restService(ConnectionInfo* ciP, RestService* serviceV)
     }
 
     strncpy(ciP->payloadWord, serviceV[ix].payloadWord.c_str(), sizeof(ciP->payloadWord));
+
     bool match = true;
     for (int compNo = 0; compNo < components; ++compNo)
     {
@@ -579,6 +579,7 @@ static std::string restService(ConnectionInfo* ciP, RestService* serviceV)
     }
 
 
+    ciP->requestType = serviceV[ix].request;
     //
     // If in restBadVerbV vector, no need to check the payload
     //
@@ -715,7 +716,7 @@ static std::string restService(ConnectionInfo* ciP, RestService* serviceV)
   //
   if (serviceV != restBadVerbV)
   {
-    return restService(ciP, restBadVerbV);
+    return restService(ciP, restBadVerbV, serviceP);
   }
 
   //
@@ -740,15 +741,100 @@ namespace orion
 *
 * orion::requestServe -
 */
-std::string requestServe(ConnectionInfo* ciP)
+std::string requestServe(ConnectionInfo* ciP, RestService* serviceP)
 {
-  if      ((ciP->verb == GET)     && (getServiceV     != NULL))    return restService(ciP, getServiceV);
-  else if ((ciP->verb == POST)    && (postServiceV    != NULL))    return restService(ciP, postServiceV);
-  else if ((ciP->verb == PUT)     && (putServiceV     != NULL))    return restService(ciP, putServiceV);
-  else if ((ciP->verb == PATCH)   && (patchServiceV   != NULL))    return restService(ciP, patchServiceV);
-  else if ((ciP->verb == DELETE)  && (deleteServiceV  != NULL))    return restService(ciP, deleteServiceV);
-  else if ((ciP->verb == OPTIONS) && (optionsServiceV != NULL))    return restService(ciP, optionsServiceV);
-  else                                                             return restService(ciP, restBadVerbV);
+  if      ((ciP->verb == GET)     && (getServiceV     != NULL))    return restService(ciP, getServiceV, serviceP);
+  else if ((ciP->verb == POST)    && (postServiceV    != NULL))    return restService(ciP, postServiceV, serviceP);
+  else if ((ciP->verb == PUT)     && (putServiceV     != NULL))    return restService(ciP, putServiceV, serviceP);
+  else if ((ciP->verb == PATCH)   && (patchServiceV   != NULL))    return restService(ciP, patchServiceV, serviceP);
+  else if ((ciP->verb == DELETE)  && (deleteServiceV  != NULL))    return restService(ciP, deleteServiceV, serviceP);
+  else if ((ciP->verb == OPTIONS) && (optionsServiceV != NULL))    return restService(ciP, optionsServiceV, serviceP);
+  else                                                             return restService(ciP, restBadVerbV, serviceP);
+}
+
+
+
+/* ****************************************************************************
+*
+* restServiceLookup - 
+*/
+static RestService* restServiceLookup(RestService* serviceV, char* url)
+{
+  int svIx = 0;
+
+  //
+  // NOTE: In the future, the URLs will come as a single string in RestService.
+  //       To implement a lookup function that is valid for the future, I will create this 'single string'
+  //       before comparison starts (once per service in the service vector).
+  //       VERY slow, of course, but this will disappear in the near future.
+  //       The advantage is that after the change, this function can be very easily changed to the new way of working.
+  //
+  while (serviceV[svIx].request != InvalidRequest)
+  {
+    char* urlP = url;
+
+    //
+    // FIXME: once the URL inside RestService is a single string, this urlPath variable
+    //        will be removed, and the field inside RestService will be used instead.
+    //
+    std::string urlPathComposed;
+    char*       urlPath;
+
+    for (int compIx = 0; compIx < serviceV[svIx].components; ++compIx)
+    {
+      urlPathComposed += "/" + serviceV[svIx].compV[compIx];
+    }
+    urlPath = (char*) urlPathComposed.c_str();
+
+    //
+    // "Smart" Compare (wildcards) incoming parameter 'url' with all entries in 'serviceV', until a match is found
+    //
+    while (*urlPath != 0)
+    {
+      if (*urlPath == '*')
+      {
+        // eat 'urlP' until next '/'
+        while ((*urlP != '/') && (*urlP != 0))
+          ++urlP;
+
+        // Now step over the '*'
+        ++urlPath;
+      }
+
+      if (*urlPath != *urlP)
+        break;
+
+      ++urlPath;
+      ++urlP;
+
+      if ((*urlPath == 0) && (*urlP == 0))
+      {
+        return &serviceV[svIx];
+      }
+    }
+    
+    ++svIx;
+  }
+
+  return NULL;
+}
+
+
+
+/* ****************************************************************************
+*
+* restServiceLookup - 
+*/
+RestService* restServiceLookup(Verb verb, char* url)
+{
+  if      ((verb == GET)     && (getServiceV     != NULL))    return restServiceLookup(getServiceV, url);
+  else if ((verb == POST)    && (postServiceV    != NULL))    return restServiceLookup(postServiceV, url);
+  else if ((verb == PUT)     && (putServiceV     != NULL))    return restServiceLookup(putServiceV, url);
+  else if ((verb == PATCH)   && (patchServiceV   != NULL))    return restServiceLookup(patchServiceV, url);
+  else if ((verb == DELETE)  && (deleteServiceV  != NULL))    return restServiceLookup(deleteServiceV, url);
+  else if ((verb == OPTIONS) && (optionsServiceV != NULL))    return restServiceLookup(optionsServiceV, url);
+
+  return NULL;
 }
 
 }

@@ -59,7 +59,9 @@ typedef enum RequestType
   RtUpdateContextResponse,
   NotifyContextSent,
 
-  ContextEntitiesByEntityId = 21,
+  ErrorCode = 21,
+  OrionErrorResponse,
+  ContextEntitiesByEntityId,
   ContextEntityAttributes,
   EntityByIdAttributeByName,
   ContextEntityTypes,

@@ -29,6 +29,8 @@
 #include "common/tag.h"
 #include "ngsi10/SubscribeContextResponse.h"
 
+
+
 /* ****************************************************************************
 *
 * SubscribeContextResponse::~SubscribeContextResponse -
@@ -36,6 +38,8 @@
 SubscribeContextResponse::~SubscribeContextResponse() {
     LM_T(LmtDestructor,("destroyed"));
 }
+
+
 
 /* ****************************************************************************
 *
@@ -47,6 +51,8 @@ SubscribeContextResponse::SubscribeContextResponse()
    subscribeError.subscriptionId.set("000000000000000000000000");
 }
 
+
+
 /* ****************************************************************************
 *
 * SubscribeContextResponse::SubscribeContextResponse - 
@@ -57,6 +63,8 @@ SubscribeContextResponse::SubscribeContextResponse(StatusCode& errorCode)
    subscribeError.errorCode.fill(&errorCode);
    subscribeError.errorCode.keyNameSet("errorCode");
 }
+
+
 
 /* ****************************************************************************
 *
@@ -82,15 +90,15 @@ std::string SubscribeContextResponse::toJson(void)
   return out;
 }
 
+
+
 /* ****************************************************************************
 *
 * SubscribeContextResponse::render - 
 */
 std::string SubscribeContextResponse::render(void)
 {
-  std::string out     = "";
-
-  out += startTag();
+  std::string out = startTag();
 
   if (subscribeError.errorCode.code == SccNone)
   {
@@ -98,7 +106,7 @@ std::string SubscribeContextResponse::render(void)
   }
   else
   {
-    out += subscribeError.render(SubscribeContext, false);
+    out += subscribeError.render(SubscribeContext, false);  // FIXME P4: Would be good to have the real RequestType here
   }
 
   out += endTag(false);

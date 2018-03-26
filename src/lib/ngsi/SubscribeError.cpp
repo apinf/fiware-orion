@@ -24,6 +24,7 @@
 */
 #include <string>
 
+#include "logMsg/logMsg.h"
 #include "common/tag.h"
 #include "ngsi/StatusCode.h"
 #include "ngsi/Request.h"
@@ -85,7 +86,7 @@ std::string SubscribeError::toJson(RequestType requestType, bool comma)
 *
 * SubscribeError::render -
 */
-std::string SubscribeError::render(RequestType requestType, bool comma)
+std::string SubscribeError::render(RequestType _requestType, bool comma)
 {
   std::string out = "";
 
@@ -93,7 +94,8 @@ std::string SubscribeError::render(RequestType requestType, bool comma)
 
   // subscriptionId is Mandatory if part of updateContextSubscriptionResponse
   // errorCode is Mandatory so, the JSON comma is always TRUE
-  if (requestType == UpdateContextSubscription)
+
+  if ((_requestType == UpdateContextSubscription) || (_requestType == Ngsi10SubscriptionsConvOp))
   {
     //
     // NOTE: the subscriptionId must have come from the request.
@@ -103,17 +105,18 @@ std::string SubscribeError::render(RequestType requestType, bool comma)
     {
       subscriptionId.set("000000000000000000000000");
     }
-    out += subscriptionId.render(requestType, true);
+
+    out += subscriptionId.render(_requestType, true);
   }
-  else if ((requestType          == SubscribeContext)           &&
-           (subscriptionId.get() != "000000000000000000000000") &&
-           (subscriptionId.get() != ""))
+  else if ((_requestType == SubscribeContext) && (subscriptionId.get() != ""))
   {
-    out += subscriptionId.render(requestType, true);
+    if (((subscriptionId.get() != "000000000000000000000000") || (errorCode.code != 400)) && (errorCode.code != 413))
+    {
+      out += subscriptionId.render(_requestType, true);
+    }
   }
 
   out += errorCode.render(false);
-
   out += endTag(comma);
 
   return out;

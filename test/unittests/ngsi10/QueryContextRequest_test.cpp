@@ -192,7 +192,7 @@ TEST(QueryContextRequest, scopeGeolocationCircleOkJson)
 {
   ParseData       reqData;
   const char*     inFile  = "ngsi10.queryContextRequest.circleOk.postponed.json";
-  ConnectionInfo  ci("/ngsi10/queryContext", "POST", "1.1");
+  ConnectionInfo  ci("/ngsi10/subscribeContext", "POST", "1.1");
   std::string     out;
 
   utInit();
@@ -201,7 +201,7 @@ TEST(QueryContextRequest, scopeGeolocationCircleOkJson)
   ci.outMimeType = JSON;
 
   EXPECT_EQ("OK", testDataFromFile(testBuf, sizeof(testBuf), inFile)) << "Error getting test data from '" << inFile << "'";
-  out = jsonTreat(testBuf, &ci, &reqData, SubscribeContext, "queryContextRequest", NULL);
+  out = jsonTreat(testBuf, &ci, &reqData, SubscribeContext, "subscribeContextRequest", NULL);
   EXPECT_STREQ("OK", out.c_str());
 
   utExit();
@@ -217,7 +217,7 @@ TEST(QueryContextRequest, scopeGeolocationCircleInvertedJson)
 {
   ParseData       reqData;
   const char*     inFile  = "ngsi10.queryContextRequest.circleInverted.postponed.json";
-  ConnectionInfo  ci("/ngsi10/queryContext", "POST", "1.1");
+  ConnectionInfo  ci("/ngsi10/subscribeContext", "POST", "1.1");
   std::string     out;
 
   utInit();
@@ -226,7 +226,7 @@ TEST(QueryContextRequest, scopeGeolocationCircleInvertedJson)
   ci.outMimeType = JSON;
 
   EXPECT_EQ("OK", testDataFromFile(testBuf, sizeof(testBuf), inFile)) << "Error getting test data from '" << inFile << "'";
-  out = jsonTreat(testBuf, &ci, &reqData, SubscribeContext, "queryContextRequest", NULL);
+  out = jsonTreat(testBuf, &ci, &reqData, SubscribeContext, "subscribeContextRequest", NULL);
   EXPECT_STREQ("OK", out.c_str());
 
   utExit();
@@ -243,17 +243,17 @@ TEST(QueryContextRequest, scopeGeolocationCircleInvertedBadValueJson)
   ParseData       reqData;
   const char*     inFile  = "ngsi10.queryContextRequest.circleInvertedBadValue.postponed.json";
   const char*     outFile = "ngsi10.queryContextRequest.circleInvertedBadValue.valid.json";
-  ConnectionInfo  ci("/ngsi10/queryContext", "POST", "1.1");
+  ConnectionInfo  ci("/ngsi10/subscribeContext", "POST", "1.1");
   std::string     out;
 
   utInit();
 
   ci.inMimeType  = JSON;
   ci.outMimeType = JSON;
-
+  
   EXPECT_EQ("OK", testDataFromFile(testBuf, sizeof(testBuf), inFile)) << "Error getting test data from '" << inFile << "'";
   EXPECT_EQ("OK", testDataFromFile(expectedBuf, sizeof(expectedBuf), outFile)) << "Error getting test data from '" << outFile << "'";
-  out = jsonTreat(testBuf, &ci, &reqData, SubscribeContext, "queryContextRequest", NULL);
+  out = jsonTreat(testBuf, &ci, &reqData, SubscribeContext, "subscribeContextRequest", NULL);
   EXPECT_STREQ(expectedBuf, out.c_str());
 
   utExit();
@@ -270,7 +270,7 @@ TEST(QueryContextRequest, scopeGeolocationCircleZeroRadiusJson)
   ParseData       reqData;
   const char*     inFile  = "ngsi10.queryContextRequest.circleZeroRadius.postponed.json";
   const char*     outFile = "ngsi10.queryContextRequest.circleZeroRadius.valid.json";
-  ConnectionInfo  ci("/ngsi10/queryContext", "POST", "1.1");
+  ConnectionInfo  ci("/ngsi10/subscribeContext", "POST", "1.1");
   std::string     out;
 
   utInit();
@@ -280,7 +280,7 @@ TEST(QueryContextRequest, scopeGeolocationCircleZeroRadiusJson)
 
   EXPECT_EQ("OK", testDataFromFile(testBuf, sizeof(testBuf), inFile)) << "Error getting test data from '" << inFile << "'";
   EXPECT_EQ("OK", testDataFromFile(expectedBuf, sizeof(expectedBuf), outFile)) << "Error getting test data from '" << outFile << "'";
-  out = jsonTreat(testBuf, &ci, &reqData, SubscribeContext, "queryContextRequest", NULL);
+  out = jsonTreat(testBuf, &ci, &reqData, SubscribeContext, "subscribeContextRequest", NULL);
   EXPECT_STREQ(expectedBuf, out.c_str());
 
   utExit();

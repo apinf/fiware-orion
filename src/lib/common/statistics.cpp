@@ -294,6 +294,8 @@ void statisticsUpdate(RequestType request, MimeType inMimeType)
   switch (request)
   {
   case NoRequest:                                        break;
+  case OrionErrorResponse:                               break;
+  case ErrorCode:                                        break;
   case RegisterContext:                                  ++noOfRegistrations; break;
   case DiscoverContextAvailability:                      ++noOfDiscoveries; break;
   case SubscribeContextAvailability:                     ++noOfAvailabilitySubscriptions; break;

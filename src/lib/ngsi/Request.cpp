@@ -49,6 +49,8 @@ const char* requestType(RequestType rt)
   case UnsubscribeContext:                          return "UnsubscribeContextRequest";
   case NotifyContext:                               return "NotifyContextRequest";
   case NotifyContextSent:                           return "NotifyContextRequestSent";
+  case ErrorCode:                                   return "ErrorCode";
+  case OrionErrorResponse:                          return "OrionErrorResponse";
   case UpdateContext:                               return "UpdateContextRequest";
   case RtUpdateContextResponse:                     return "UpdateContextResponse";
 

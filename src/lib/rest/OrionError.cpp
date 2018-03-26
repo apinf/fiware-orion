@@ -144,7 +144,6 @@ std::string OrionError::toJson(void)
 /* ****************************************************************************
 *
 * OrionError::render -
-*
 */
 std::string OrionError::render(void)
 {

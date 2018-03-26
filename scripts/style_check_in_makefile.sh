@@ -66,7 +66,7 @@ style_check test/unittests/serviceRoutines
 
 # FIXME: Just keep adding directories here until all of them are included:
 
-# style_check src/app/contextBroker (1 file)
+# style_check src/app/contextBroker (3 files)
 # style_check src/lib/ngsiNotify (1 file)
 # style_check src/lib/parse (2 files)
 # style_check src/lib/rest (3 files)

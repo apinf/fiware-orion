@@ -285,7 +285,7 @@ Date: REGEX(.*)
 02. PUT /v1/contextSubscriptions/123456789012345678901234 with 000000000000000000000000 in payload and see it fail
 ==================================================================================================================
 HTTP/1.1 200 OK
-Content-Length: 228
+Content-Length: 184
 Content-Type: application/json
 Fiware-Correlator: REGEX([0-9a-f\-]{36})
 Date: REGEX(.*)
@@ -296,8 +296,7 @@ Date: REGEX(.*)
             "code": "400", 
             "details": "unmatching subscriptionId URI/payload: /123456789012345678901234/ vs /000000000000000000000000/", 
             "reasonPhrase": "Bad Request"
-        }, 
-        "subscriptionId": "000000000000000000000000"
+        }
     }
 }
 

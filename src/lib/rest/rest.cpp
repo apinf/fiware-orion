@@ -35,7 +35,7 @@
 #include "logMsg/logMsg.h"
 #include "logMsg/traceLevels.h"
 
-#include "common/limits.h"
+#include "common/limits.h"  // SERVICE_NAME_MAX_LEN
 #include "common/string.h"
 #include "common/wsStrip.h"
 #include "common/globals.h"
@@ -47,14 +47,14 @@
 
 #include "alarmMgr/alarmMgr.h"
 #include "metricsMgr/metricsMgr.h"
-
 #include "parse/forbiddenChars.h"
+#include "ngsi/Request.h"
+
 #include "rest/RestService.h"
 #include "rest/rest.h"
 #include "rest/restReply.h"
 #include "rest/OrionError.h"
 #include "rest/uriParamNames.h"
-#include "common/limits.h"  // SERVICE_NAME_MAX_LEN
 
 
 
@@ -943,7 +943,8 @@ static int contentTypeCheck(ConnectionInfo* ciP)
   {
     std::string details = "Content-Type header not used, default application/octet-stream is not supported";
     ciP->httpStatusCode = SccUnsupportedMediaType;
-    ciP->answer = restErrorReplyGet(ciP, "", SccUnsupportedMediaType, details);
+    ciP->requestType    = OrionErrorResponse;
+    ciP->answer         = restErrorReplyGet(ciP, "", SccUnsupportedMediaType, details);
     ciP->httpStatusCode = SccUnsupportedMediaType;
 
     return 1;
@@ -954,7 +955,8 @@ static int contentTypeCheck(ConnectionInfo* ciP)
   {
     std::string details = std::string("not supported content type: ") + ciP->httpHeaders.contentType;
     ciP->httpStatusCode = SccUnsupportedMediaType;
-    ciP->answer = restErrorReplyGet(ciP, "", SccUnsupportedMediaType, details);
+    ciP->requestType    = OrionErrorResponse;
+    ciP->answer         = restErrorReplyGet(ciP, "", SccUnsupportedMediaType, details);
     ciP->httpStatusCode = SccUnsupportedMediaType;
     return 1;
   }
@@ -965,7 +967,8 @@ static int contentTypeCheck(ConnectionInfo* ciP)
   {
     std::string details = std::string("not supported content type: ") + ciP->httpHeaders.contentType;
     ciP->httpStatusCode = SccUnsupportedMediaType;
-    ciP->answer = restErrorReplyGet(ciP, "", SccUnsupportedMediaType, details);
+    ciP->requestType    = OrionErrorResponse;
+    ciP->answer         = restErrorReplyGet(ciP, "", SccUnsupportedMediaType, details);
     ciP->httpStatusCode = SccUnsupportedMediaType;
     return 1;
   }
@@ -1246,7 +1249,6 @@ static int connectionTreat
       clock_gettime(CLOCK_REALTIME, &ciP->reqStartTime);
     }
 
-    // LM_TMP(("--------------------- Serving request %s %s -----------------", method, url));
     LM_T(LmtRequest, (""));
     // WARNING: This log message below is crucial for the correct function of the Behave tests - CANNOT BE REMOVED
     LM_T(LmtRequest, ("--------------------- Serving request %s %s -----------------", method, url));
@@ -1404,7 +1406,7 @@ static int connectionTreat
   //
   // 3. Finally, serve the request (unless an error has occurred)
   //
-  // URL and headers checks are delayed to the "third" MHD call, as no
+  // URL and headers checks are delayed to this "third" MHD call, as no
   // errors can be sent before all the request has been read
   //
   if (urlCheck(ciP, ciP->url) == false)
@@ -1412,6 +1414,18 @@ static int connectionTreat
     alarmMgr.badInput(clientIp, "error in URI path");
     restReply(ciP, ciP->answer);
     return MHD_YES;
+  }
+
+  //
+  // Here, after making sure the URL is valid (at least syntactically) and the VERB is known (from step 1)
+  // we can lookup the RestService.
+  // This gives us the RequestType which will help us forming response payloads
+  //
+  RestService* serviceP = orion::restServiceLookup(ciP->verb, (char*) ciP->url.c_str());
+
+  if (serviceP != NULL)
+  {
+    ciP->requestType = serviceP->request;
   }
 
   lmTransactionSetSubservice(ciP->httpHeaders.servicePath.c_str());
@@ -1451,8 +1465,11 @@ static int connectionTreat
 
     alarmMgr.badInput(clientIp, details);
 
-    ciP->answer         = restErrorReplyGet(ciP, "", SccRequestEntityTooLarge, details);
     ciP->httpStatusCode = SccRequestEntityTooLarge;
+    ciP->answer         = restErrorReplyGet(ciP, "", SccRequestEntityTooLarge, details);
+
+    restReply(ciP, ciP->answer);
+    return MHD_YES;
   }
 
 
@@ -1558,7 +1575,7 @@ static int connectionTreat
   }
   else
   {
-    orion::requestServe(ciP);
+    orion::requestServe(ciP, serviceP);
   }
 
   return MHD_YES;

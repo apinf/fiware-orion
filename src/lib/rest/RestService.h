@@ -51,7 +51,7 @@ typedef std::string (*RestServiceHandler)(ConnectionInfo* ciP, int compononts, s
 typedef std::string (*RestTreat)(ConnectionInfo* ciP, int components, std::vector<std::string>& compV, ParseData* reqDataP);
 typedef struct RestService
 {
-  RequestType   request;          // The type of the request
+  RequestType   request;          // The type of the request - FIXME; Change to requestType!!!
   int           components;       // Number of components in the URL path
   std::string   compV[10];        // Vector of URL path components. E.g. { "v2", "entities" }
   std::string   payloadWord;      // No longer used, should be removed ... ?
@@ -107,7 +107,15 @@ namespace orion
 *
 * orion::requestServe -
 */
-extern std::string requestServe(ConnectionInfo* ciP);
+extern std::string requestServe(ConnectionInfo* ciP, RestService* serviceP = NULL);
+
+
+
+/* ****************************************************************************
+*
+* orion::restServiceLookup -
+*/
+extern RestService* restServiceLookup(Verb verb, char* url);
 
 }
 

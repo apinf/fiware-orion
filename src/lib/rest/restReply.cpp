@@ -156,6 +156,22 @@ void restReply(ConnectionInfo* ciP, const std::string& answer)
 
 /* ****************************************************************************
 *
+* requestTypeGuess - 
+*/
+static RequestType requestTypeGuess(ConnectionInfo* ciP)
+{
+  if (ciP->url == "/ngsi9/discoverContextAvailability")
+    return DiscoverContextAvailability;
+  else if (ciP->url == "/v1/registry/registerContext")
+    return RegisterContext;
+
+  return NoRequest;
+}
+
+
+
+/* ****************************************************************************
+*
 * restErrorReplyGet -
 *
 * This function renders an error reply depending on the 'request' type.
@@ -172,11 +188,21 @@ std::string restErrorReplyGet(ConnectionInfo* ciP, const std::string& indent, Ht
    StatusCode    errorCode(code, details, "errorCode");
    std::string   reply;
 
-   ciP->httpStatusCode = SccOk;
-
+   if (ciP->apiVersion == V1)
+   {
+     if (ciP->httpStatusCode != 413)  // Exception for 413 ...
+       ciP->httpStatusCode = SccOk;
+   }
+   
+   if (ciP->requestType == NoRequest)
+   {
+     ciP->requestType = requestTypeGuess(ciP);
+   }
+   
    if (ciP->requestType == RegisterContext)
    {
       RegisterContextResponse rcr("000000000000000000000000", errorCode);
+
       reply =  rcr.render();
    }
    else if (ciP->requestType == DiscoverContextAvailability)
@@ -184,7 +210,7 @@ std::string restErrorReplyGet(ConnectionInfo* ciP, const std::string& indent, Ht
       DiscoverContextAvailabilityResponse dcar(errorCode);
       reply =  dcar.render();
    }
-   else if (ciP->requestType == SubscribeContextAvailability)
+   else if ((ciP->requestType == SubscribeContextAvailability) || (ciP->requestType == Ngsi9SubscriptionsConvOp))
    {
       SubscribeContextAvailabilityResponse scar("000000000000000000000000", errorCode);
       reply =  scar.render();
@@ -207,13 +233,15 @@ std::string restErrorReplyGet(ConnectionInfo* ciP, const std::string& indent, Ht
    else if (ciP->requestType == QueryContext)
    {
       QueryContextResponse qcr(errorCode);
-      bool asJsonObject = (ciP->uriParam[URI_PARAM_ATTRIBUTE_FORMAT] == "object" && ciP->outMimeType == JSON);
+      bool                 asJsonObject = (ciP->uriParam[URI_PARAM_ATTRIBUTE_FORMAT] == "object" && ciP->outMimeType == JSON);
+
       reply =  qcr.render(ciP->apiVersion, asJsonObject);
    }
-   else if (ciP->requestType == SubscribeContext)
+   else if ((ciP->requestType == SubscribeContext) || (ciP->requestType == Ngsi10SubscriptionsConvOp))
    {
       SubscribeContextResponse scr(errorCode);
-      reply =  scr.render();
+
+      reply = scr.render();
    }
    else if (ciP->requestType == UpdateContextSubscription)
    {
@@ -236,12 +264,18 @@ std::string restErrorReplyGet(ConnectionInfo* ciP, const std::string& indent, Ht
       NotifyContextResponse ncr(errorCode);
       reply =  ncr.render();
    }
+   else if (ciP->requestType == ErrorCode)
+   {
+     errorCode.keyNameSet("errorCode");
+     ciP->httpStatusCode = errorCode.code;
+     reply = "{" + errorCode.render(false) + "}";
+   }
    else
    {
      OrionError oe(errorCode);
 
      ciP->httpStatusCode = oe.code;
-     reply = oe.setStatusCodeAndSmartRender(ciP->apiVersion, &(ciP->httpStatusCode));
+     reply = oe.setStatusCodeAndSmartRender(ciP->apiVersion, &ciP->httpStatusCode);
    }
 
    return reply;
