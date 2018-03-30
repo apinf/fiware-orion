@@ -618,6 +618,7 @@ int httpRequestSendWithCurl
     int   payloadLen  = contentLenParse(httpResponse->memory);
 
     LM_I(("Notification Successfully Sent to %s", url.c_str()));
+    LM_TMP(("Notification payload: %s", httpResponse->memory));
     outP->assign(httpResponse->memory, httpResponse->size);
 
     metricsMgr.add(tenant, servicePath0, METRIC_TRANS_OUT_RESP_SIZE, payloadLen);
@@ -684,6 +685,8 @@ int httpRequestSend
 {
   struct curl_context  cc;
   int                  response;
+
+  LM_TMP(("Forwarding/Notifying a '%s': %s", resource.c_str(), content.c_str()));
 
   get_curl_context(_ip, &cc);
   if (cc.curl == NULL)

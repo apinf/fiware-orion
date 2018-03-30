@@ -92,7 +92,7 @@ std::string parseEntity(ConnectionInfo* ciP, Entity* eP, bool eidInURL)
     if (!document.HasMember("id"))
     {
       OrionError oe(SccBadRequest, ERROR_DESC_BAD_REQUEST_EMPTY_ENTITY_ID, ERROR_BAD_REQUEST);
-
+      LM_TMP(("ERROR"));
       alarmMgr.badInput(clientIp, "No entity id specified");
       ciP->httpStatusCode = SccBadRequest;
 
@@ -252,6 +252,7 @@ std::string parseEntity(ConnectionInfo* ciP, Entity* eP, bool eidInURL)
     if (eP->id == "")
     {
       OrionError oe(SccBadRequest, ERROR_DESC_BAD_REQUEST_EMPTY_ENTITY_ID, ERROR_BAD_REQUEST);
+      LM_TMP(("ERROR"));
 
       alarmMgr.badInput(clientIp, "empty entity id");
       ciP->httpStatusCode = SccBadRequest;

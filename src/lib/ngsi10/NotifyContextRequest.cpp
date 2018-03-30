@@ -24,6 +24,8 @@
 */
 #include <string>
 
+#include "logMsg/logMsg.h"
+
 #include "common/globals.h"
 #include "common/tag.h"
 #include "common/RenderFormat.h"
@@ -43,6 +45,7 @@ std::string NotifyContextRequest::render(ApiVersion apiVersion, bool asJsonObjec
   std::string  out                                  = "";
   bool         contextElementResponseVectorRendered = contextElementResponseVector.size() != 0;
 
+  LM_TMP(("Rendering a NotifyContextRequest"));
   //
   // Note on JSON commas:
   //   subscriptionId and originator are MANDATORY.
@@ -55,6 +58,7 @@ std::string NotifyContextRequest::render(ApiVersion apiVersion, bool asJsonObjec
   out += contextElementResponseVector.render(apiVersion, asJsonObject, NotifyContext, false);
   out += endTag();
 
+  LM_TMP(("NotifyContextRequest: %s", out.c_str()));
   return out;
 }
 
@@ -72,6 +76,8 @@ std::string NotifyContextRequest::toJson
   bool                             blacklist
 )
 {
+  LM_TMP(("Rendering a NotifyContextRequest"));
+
   if ((renderFormat != NGSI_V2_NORMALIZED) && (renderFormat != NGSI_V2_KEYVALUES) && (renderFormat != NGSI_V2_VALUES))
   {
     OrionError oe(SccBadRequest, "Invalid notification format");

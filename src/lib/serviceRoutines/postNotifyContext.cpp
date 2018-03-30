@@ -55,6 +55,8 @@ std::string postNotifyContext
   NotifyContextResponse  ncr;
   std::string            answer;
 
+  LM_TMP(("Got a POST %s. Payload: %s", ciP->url.c_str(), ciP->payload));
+
   TIMED_MONGO(ciP->httpStatusCode = mongoNotifyContext(&parseDataP->ncr.res,
                                                        &ncr,
                                                        ciP->tenant,

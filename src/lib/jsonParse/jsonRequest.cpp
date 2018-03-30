@@ -29,6 +29,8 @@
 #include "logMsg/traceLevels.h"
 
 #include "common/limits.h"
+#include "common/string.h"
+#include "orionTypes/OrionValueType.h"
 #include "alarmMgr/alarmMgr.h"
 #include "ngsi/Request.h"
 #include "ngsi/ParseData.h"
@@ -43,7 +45,6 @@
 #include "jsonParse/jsonNotifyContextAvailabilityRequest.h"
 #include "jsonParse/jsonUnsubscribeContextAvailabilityRequest.h"
 #include "jsonParse/jsonUpdateContextAvailabilitySubscriptionRequest.h"
-
 #include "jsonParse/jsonQueryContextRequest.h"
 #include "jsonParse/jsonQueryContextResponse.h"
 #include "jsonParse/jsonUpdateContextRequest.h"
@@ -52,16 +53,31 @@
 #include "jsonParse/jsonUnsubscribeContextRequest.h"
 #include "jsonParse/jsonNotifyContextRequest.h"
 #include "jsonParse/jsonUpdateContextSubscriptionRequest.h"
-
 #include "jsonParse/jsonRegisterProviderRequest.h"
 #include "jsonParse/jsonUpdateContextElementRequest.h"
 #include "jsonParse/jsonAppendContextElementRequest.h"
 #include "jsonParse/jsonUpdateContextAttributeRequest.h"
 
 #include "parse/compoundValue.h"
+#include "parse/CompoundValueNode.h"
 #include "rest/restReply.h"
 
 
+
+/* ****************************************************************************
+*
+* UGLY_FIX_FOR_ISSUE_3147 - 
+*
+* FIXME P6: Remove when APIv2 notifications are implemented
+*/
+#define UGLY_FIX_FOR_ISSUE_3147  1
+
+
+
+/* ****************************************************************************
+*
+* FUNCS - 
+*/
 #define FUNCS(prefix) json##prefix##ParseVector, json##prefix##Init,    \
                       json##prefix##Check,       json##prefix##Present, \
                       json##prefix##Release
@@ -283,5 +299,105 @@ std::string jsonTreat
     alarmMgr.badInput(clientIp, details);
   }
 
+#ifdef UGLY_FIX_FOR_ISSUE_3147
+  //
+  // Example payload:
+  //
+  // {
+  //   "subscriptionId":"5abe4c53ef579c12a6a1441a",
+  //   "originator":"localhost",
+  //   "contextResponses": [
+  //     {
+  //       "contextElement": {
+  //         "type":"WeatherObserved",
+  //         "isPattern":"false",
+  //         "id":"Spain-WeatherObserved-6172O-latest",
+  //         "attributes": [
+  //           {
+  //             "name":"location",
+  //             "type":"geo:json",
+  //             "value":{
+  //               "type":"Point",
+  //               "coordinates": [ -4, 36 ]
+  //             }
+  //           }
+  //         ]
+  //       },
+  //       "statusCode": {
+  //         "code":"200",
+  //         "reasonPhrase":"OK"
+  //       }
+  //     }
+  //   ]
+  // }
+  //
+  // But, the parse has converted the "coordinates": [ -4, 36 ]   into  "coordinates": [ "-4", "36" ]
+  //
+  // We need to reach the items in the "coordinates" vector (inside the compound value of attribute "location"),
+  // and convert these strings back to Numbers
+  //
+  if (reqP->type == NotifyContext)
+  {
+    LM_TMP(("NotifyContext"));
+    for (unsigned int cerIx = 0; cerIx <  parseDataP->ncr.res.contextElementResponseVector.size(); ++cerIx)
+    {
+      ContextElement* ceP = &parseDataP->ncr.res.contextElementResponseVector[cerIx]->contextElement;
+
+      LM_TMP(("NotifyContext II"));
+      for (unsigned int aIx = 0; aIx < ceP->contextAttributeVector.size(); ++aIx)
+      {
+        ContextAttribute* aP = ceP->contextAttributeVector[aIx];
+
+        LM_TMP(("NotifyContext III: '%s', '%s', '%s', %p", aP->name.c_str(), aP->type.c_str(), valueTypeName(aP->valueType), aP->compoundValueP));
+        
+        if ((aP->name == "location") && (aP->type == "geo:json") && (aP->compoundValueP != NULL))
+        {
+          orion::CompoundValueNode* compP = aP->compoundValueP;
+
+          LM_TMP(("NotifyContext: found a 'geo:json' attribute named 'location' with a compound value", valueTypeName(aP->valueType)));
+
+          // Now we need to find a node named "coordinates" that has a VECTOR value ...
+          // ... and convert the vector items from String to Number (float)
+
+          LM_TMP(("Children: %d", compP->childV.size()));
+          for (unsigned int childIx = 0; childIx < compP->childV.size(); ++childIx)
+          {
+            orion::CompoundValueNode* childP = compP->childV[childIx];
+
+            LM_TMP(("Found a compound child '%s', value type: '%s'", childP->name.c_str(), valueTypeName(childP->valueType)));
+            if ((childP->name == "coordinates") && (childP->valueType == orion::ValueTypeVector))
+            {
+              LM_TMP(("Found coordinates vector, it has %d items", childP->childV.size()));
+              for (unsigned int itemIx = 0; itemIx < childP->childV.size(); ++itemIx)
+              {
+                orion::CompoundValueNode* itemP = childP->childV[itemIx];
+
+                LM_TMP(("item %d is of type %s", itemIx, valueTypeName(itemP->valueType)));
+
+                //
+                // If String, convert to Number
+                //
+                if (itemP->valueType == orion::ValueTypeString)
+                {
+                  double dVal;
+                  bool   conversionOk = str2double(itemP->stringValue.c_str(), &dVal);
+
+                  if (conversionOk == true)
+                  {
+                    itemP->numberValue = dVal;
+                    itemP->valueType   = orion::ValueTypeNumber;
+
+                    LM_TMP(("Converted String '%s', with double %f", itemP->stringValue.c_str(), itemP->numberValue));
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+#endif
+  
   return res;
 }

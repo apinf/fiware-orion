@@ -2497,6 +2497,8 @@ static bool appendContextAttributeItem
 {
   std::string err;
 
+  LM_TMP(("currentLocAttrName: '%s'", currentLocAttrName->c_str()));
+
   if (!legalIdUsage(attrs, targetAttr))
   {
     /* If legalIdUsage() returns false, then that particular attribute can not be appended. In this case,
@@ -2519,6 +2521,7 @@ static bool appendContextAttributeItem
   entityModified = actualUpdate || entityModified;
 
   /* Check aspects related with location */
+  LM_TMP(("currentLocAttrName: '%s'", currentLocAttrName->c_str()));
   if (!processLocationAtAppendAttribute(currentLocAttrName, targetAttr, actualAppend, geoJson,
                                         &err, apiVersion, oe))
   {
@@ -2653,6 +2656,7 @@ static bool processContextAttributeVector
   std::map<std::string, unsigned int>  deletedAttributesCounter;  // Aux var for DELETE operations
   std::vector<std::string>             modifiedAttrs;
 
+  LM_TMP(("currentLocAttrName: '%s'", currentLocAttrName->c_str()));
   for (unsigned int ix = 0; ix < ceP->contextAttributeVector.size(); ++ix)
   {
     ContextAttribute*  targetAttr = ceP->contextAttributeVector[ix];
@@ -3188,6 +3192,7 @@ static void updateEntity
     locAttr        = getStringFieldF(loc, ENT_LOCATION_ATTRNAME);
     currentGeoJson = getObjectFieldF(loc, ENT_LOCATION_COORDS);
   }
+  LM_TMP(("locAttr: '%s'", locAttr.c_str()));
 
   //
   // Before calling processContextAttributeVector and actually do the work, let's check if the
@@ -3236,6 +3241,7 @@ static void updateEntity
     loopDetected = (getStringFieldF(r, ENT_LAST_CORRELATOR) == fiwareCorrelator);
   }
 
+  LM_TMP(("locAttr: '%s'", locAttr.c_str()));
   if (!processContextAttributeVector(ceP,
                                      action,
                                      subsToNotify,

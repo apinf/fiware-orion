@@ -84,6 +84,7 @@ static bool stringArray2coords
 
     if (!string2coords(item->stringValue, lat, lon))
     {
+      LM_TMP(("string2coords error"));
       *errDetail = "geo coordinates format error [see Orion user manual]: " + item->stringValue;
       return false;
     }
@@ -94,6 +95,15 @@ static bool stringArray2coords
 
   return true;
 }
+
+
+/* ****************************************************************************
+*
+* UGLY_FIX_FOR_ISSUE_3147 - 
+*
+* FIXME P6: Remove when APIv2 notifications are implemented
+*/
+#define UGLY_FIX_FOR_ISSUE_3147  1
 
 
 
@@ -118,6 +128,7 @@ static bool getGeoJson
   std::vector<double>  coordLong;
   BSONArrayBuilder     ba;
 
+#ifndef UGLY_FIX_FOR_ISSUE_3147
   if ((apiVersion == V1) || (caP->type == GEO_POINT))
   {
     double  aLat;
@@ -125,6 +136,7 @@ static bool getGeoJson
 
     if (!string2coords(caP->stringValue, aLat, aLong))
     {
+      LM_TMP(("string2coords error, caP->type == '%s'", caP->type.c_str()));
       *errDetail = "geo coordinates format error [see Orion user manual]: " + caP->stringValue;
       return false;
     }
@@ -134,6 +146,7 @@ static bool getGeoJson
 
     return true;
   }
+#endif
 
   if (caP->type == GEO_JSON)
   {
@@ -162,6 +175,26 @@ static bool getGeoJson
 
     return true;
   }
+
+#ifdef UGLY_FIX_FOR_ISSUE_3147
+  if ((apiVersion == V1) || (caP->type == GEO_POINT))
+  {
+    double  aLat;
+    double  aLong;
+
+    if (!string2coords(caP->stringValue, aLat, aLong))
+    {
+      LM_TMP(("string2coords error, caP->type == '%s'", caP->type.c_str()));
+      *errDetail = "geo coordinates format error [see Orion user manual]: " + caP->stringValue;
+      return false;
+    }
+
+    geoJson->append("type", "Point");
+    geoJson->append("coordinates", BSON_ARRAY(aLong << aLat));
+
+    return true;
+  }
+#endif
 
   // geo:line, geo:box and geo:polygon use vector of coordinates
   if (!stringArray2coords(caP, &coordLat, &coordLong, errDetail))
@@ -334,6 +367,8 @@ bool processLocationAtUpdateAttribute
 {
   std::string subErr;
 
+  LM_TMP(("currentLocAttrName: '%s'", currentLocAttrName->c_str()));
+
   //
   // FIXME P5 https://github.com/telefonicaid/fiware-orion/issues/1142:
   // note that with the current logic, the name of the attribute meaning location
@@ -361,7 +396,7 @@ bool processLocationAtUpdateAttribute
   {
     //
     // Case 1a:
-    //   no location yet -> the updated attribute becomes the location attribute */
+    //   no location yet -> the updated attribute becomes the location attribute
     //
     if (*currentLocAttrName == "")
     {
@@ -385,6 +420,7 @@ bool processLocationAtUpdateAttribute
       *errDetail = "attempt to define a geo location attribute [" + targetAttr->name + "]" +
                    " when another one has been previously defined [" + *currentLocAttrName + "]";
 
+      LM_TMP(("%s", errDetail->c_str()));
       oe->fill(SccRequestEntityTooLarge,
                "You cannot use more than one geo location attribute when creating an entity [see Orion user manual]",
                "NoResourcesAvailable");
@@ -402,6 +438,7 @@ bool processLocationAtUpdateAttribute
       if (!getGeoJson(targetAttr, geoJson, &subErr, apiVersion))
       {
         *errDetail = "error parsing location attribute: " + subErr;
+        LM_TMP(("%s", errDetail->c_str()));
         oe->fill(SccBadRequest, *errDetail, "BadRequest");
         return false;
       }
@@ -411,8 +448,8 @@ bool processLocationAtUpdateAttribute
 
   //
   // Case 2:
-  //   update *to* no-location and the attribute previously holding it is the same than the target attribute
-  //   The behaviour is differenet depending on NGSI version
+  //   update *to* no-location and the attribute previously holding it is the same as the target attribute
+  //   The behaviour is different depends on NGSI version
   //
   else if (*currentLocAttrName == targetAttr->name)
   {
@@ -423,14 +460,16 @@ bool processLocationAtUpdateAttribute
       if (!getGeoJson(targetAttr, geoJson, &subErr, apiVersion))
       {
         *errDetail = "error parsing location attribute: " + subErr;
+        LM_TMP(("%s", errDetail->c_str()));
         oe->fill(SccBadRequest, *errDetail, "BadRequest");
         return false;
       }
     }
     else  // v2
     {
-      // Location is null-ified
+      // Location is null-ified - meaning, a future location attribute will be accepted
       *currentLocAttrName = "";
+      LM_TMP(("Location is nullified"));
     }
   }
 
@@ -457,6 +496,8 @@ bool processLocationAtAppendAttribute
   std::string subErr;
   std::string locationString = targetAttr->getLocation(apiVersion);
 
+  LM_TMP(("currentLocAttrName: '%s'", currentLocAttrName->c_str()));
+
   /* Check that location (if any) is using the correct coordinates string (it only
      * makes sense for NGSIv1, this is legacy code that will be eventually removed) */
   if ((locationString.length() > 0) && (locationString != LOCATION_WGS84) && (locationString != LOCATION_WGS84_LEGACY))
@@ -469,12 +510,14 @@ bool processLocationAtAppendAttribute
   /* Case 1: append of new location attribute */
   if (actualAppend && (locationString.length() > 0))
   {
+    LM_TMP(("actualAppend && locationString.length() > 0"));
     /* Case 1a: there is a previous location attribute -> error */
     if (currentLocAttrName->length() != 0)
     {
       *errDetail = "attempt to define a geo location attribute [" + targetAttr->name + "]" +
                    " when another one has been previously defined [" + *currentLocAttrName + "]";
 
+      LM_TMP(("%s", errDetail->c_str()));
       oe->fill(SccRequestEntityTooLarge,
                "You cannot use more than one geo location attribute when creating an entity [see Orion user manual]",
                "NoResourcesAvailable");
@@ -491,17 +534,22 @@ bool processLocationAtAppendAttribute
         return false;
       }
       *currentLocAttrName = targetAttr->name;
+      LM_TMP(("First location attribute: %s", currentLocAttrName->c_str()));
     }
   }
   /* Case 2: append-as-update changing attribute type from no-location -> location */
   else if (!actualAppend && (locationString.length() > 0))
   {
-    /* Case 2a: there is a previous (which different name) location attribute -> error */
-    if (*currentLocAttrName != targetAttr->name)
+    LM_TMP(("NOT actualAppend && locationString.length() > 0 - only OK if same name"));
+    LM_TMP(("targetAttr->name: '%s'", targetAttr->name.c_str()));
+    LM_TMP(("currentLocAttrName: '%s'", currentLocAttrName->c_str()));
+    /* Case 2a: there is a previous (with different name) location attribute -> error */
+    if ((*currentLocAttrName != targetAttr->name) && (*currentLocAttrName != ""))
     {
       *errDetail = "attempt to define a geo location attribute [" + targetAttr->name + "]" +
                    " when another one has been previously defined [" + *currentLocAttrName + "]";
 
+      LM_TMP(("%s", errDetail->c_str()));
       oe->fill(SccRequestEntityTooLarge,
                "You cannot use more than one geo location attribute when creating an entity [see Orion user manual]",
                "NoResourcesAvailable");

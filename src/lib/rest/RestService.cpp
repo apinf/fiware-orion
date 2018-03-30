@@ -157,10 +157,12 @@ std::string payloadParse
   {
     if (ciP->apiVersion == V2)
     {
+      LM_TMP(("Parsing V2 request"));
       result = jsonRequestTreat(ciP, parseDataP, service->request, jsonReleaseP, compV);
     }
     else
     {
+      LM_TMP(("Parsing V1 request"));
       result = jsonTreat(ciP->payload, ciP, parseDataP, service->request, service->payloadWord, jsonPP);
     }
   }
@@ -439,6 +441,7 @@ static bool compErrorDetect
 
       if (entityId == "")
       {
+        LM_TMP(("ERROR"));
         details = ERROR_DESC_BAD_REQUEST_EMPTY_ENTITY_ID;
       }
     }
@@ -449,6 +452,7 @@ static bool compErrorDetect
 
       if (entityId == "")
       {
+        LM_TMP(("ERROR"));
         details = ERROR_DESC_BAD_REQUEST_EMPTY_ENTITY_ID;
       }
       else if (attrName == "")
@@ -463,6 +467,7 @@ static bool compErrorDetect
 
       if (entityId == "")
       {
+        LM_TMP(("ERROR"));
         details = ERROR_DESC_BAD_REQUEST_EMPTY_ENTITY_ID;
       }
       else if (attrName == "")
