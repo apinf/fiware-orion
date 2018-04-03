@@ -178,6 +178,25 @@ static JsonRequest* jsonRequestGet(RequestType request, std::string method)
 }
 
 
+/* ****************************************************************************
+*
+* valueTypeFromStringToNumber - 
+*/
+static void valueTypeFromStringToNumber(orion::CompoundValueNode* itemP)
+{
+  double dVal;
+  bool   conversionOk = str2double(itemP->stringValue.c_str(), &dVal);
+
+  if (conversionOk == true)
+  {
+    itemP->numberValue = dVal;
+    itemP->valueType   = orion::ValueTypeNumber;
+
+    LM_TMP(("Converted String '%s', with double %f", itemP->stringValue.c_str(), itemP->numberValue));
+  }
+}
+
+
 
 /* ****************************************************************************
 *
@@ -378,16 +397,25 @@ std::string jsonTreat
                 // If String, convert to Number
                 //
                 if (itemP->valueType == orion::ValueTypeString)
+                  valueTypeFromStringToNumber(itemP);
+                else if (itemP->valueType == orion::ValueTypeVector)
                 {
-                  double dVal;
-                  bool   conversionOk = str2double(itemP->stringValue.c_str(), &dVal);
-
-                  if (conversionOk == true)
+                  for (unsigned int vItemIx = 0; vItemIx < itemP->childV.size(); ++vItemIx)
                   {
-                    itemP->numberValue = dVal;
-                    itemP->valueType   = orion::ValueTypeNumber;
+                    orion::CompoundValueNode* vItemP  = itemP->childV[vItemIx];
 
-                    LM_TMP(("Converted String '%s', with double %f", itemP->stringValue.c_str(), itemP->numberValue));
+                    if (vItemP->valueType == orion::ValueTypeString)
+                      valueTypeFromStringToNumber(vItemP);
+                    else if (itemP->valueType == orion::ValueTypeVector)
+                    {
+                      for (unsigned int vvItemIx = 0; vvItemIx < vItemP->childV.size(); ++vvItemIx)
+                      {
+                        orion::CompoundValueNode* vvItemP  = vItemP->childV[vvItemIx];
+                        
+                        if (vvItemP->valueType == orion::ValueTypeString)
+                          valueTypeFromStringToNumber(vvItemP);
+                      }
+                    }
                   }
                 }
               }
