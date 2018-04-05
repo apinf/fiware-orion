@@ -1,6 +1,9 @@
+#ifndef SRC_LIB_SERVICEROUTINESV2_OPTIONSVERSIONREQUEST_H_
+#define SRC_LIB_SERVICEROUTINESV2_OPTIONSVERSIONREQUEST_H_
+
 /*
 *
-* Copyright 2013 Telefonica Investigacion y Desarrollo, S.A.U
+* Copyright 2018 Telefonica Investigacion y Desarrollo, S.A.U
 *
 * This file is part of Orion Context Broker.
 *
@@ -20,44 +23,26 @@
 * For those usages not covered by this license please contact with
 * iot_support at tid dot es
 *
-* Author: Ken Zangelin
+* Author: Burak Karaboga - ATOS Research & Innovation
 */
 #include <string>
+#include <vector>
 
-#include "gtest/gtest.h"
-
-#include "serviceRoutines/badVerbPostOnly.h"
-#include "rest/RestService.h"
-#include "rest/rest.h"
+#include "rest/ConnectionInfo.h"
+#include "ngsi/ParseData.h"
 
 
 
 /* ****************************************************************************
 *
-* badVerbV -
+* optionsVersionRequest -
 */
-static RestService badVerbV[] =
-{
-  { RegisterContext, 2, { "ngsi9",  "registerContext" }, "", badVerbPostOnly },
-  { InvalidRequest,  0, {                             }, "", NULL            }
-};
+extern std::string optionsVersionRequest
+(
+  ConnectionInfo*            ciP,
+  int                        components,
+  std::vector<std::string>&  compV,
+  ParseData*                 parseDataP
+);
 
-
-
-/* ****************************************************************************
-*
-* ok -
-*/
-TEST(badVerbPostOnly, ok)
-{
-  ConnectionInfo ci("/ngsi9/registerContext",  "PUT", "1.1");
-  std::string     expected = "";  // Bad verb gives no payload, only HTTP headers
-  std::string     out;
-
-  serviceVectorsSet(NULL, NULL, NULL, NULL, NULL, NULL, badVerbV);
-  out = orion::requestServe(&ci);
-
-  EXPECT_EQ(expected, out);
-  EXPECT_EQ("Allow", ci.httpHeader[0]);
-  EXPECT_EQ("POST",  ci.httpHeaderValue[0]);
-}
+#endif  // SRC_LIB_SERVICEROUTINESV2_OPTIONSVERSIONREQUEST_H_
