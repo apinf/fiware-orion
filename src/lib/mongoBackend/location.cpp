@@ -118,29 +118,13 @@ static bool getGeoJson
   std::vector<double>  coordLong;
   BSONArrayBuilder     ba;
 
-  if ((apiVersion == V1) || (caP->type == GEO_POINT))
-  {
-    double  aLat;
-    double  aLong;
-
-    if (!string2coords(caP->stringValue, aLat, aLong))
-    {
-      *errDetail = "geo coordinates format error [see Orion user manual]: " + caP->stringValue;
-      return false;
-    }
-
-    geoJson->append("type", "Point");
-    geoJson->append("coordinates", BSON_ARRAY(aLong << aLat));
-
-    return true;
-  }
-
   if (caP->type == GEO_JSON)
   {
     // Attribute value has to be object in this case
     if ((caP->compoundValueP == NULL) || !(caP->compoundValueP->isObject()))
     {
       *errDetail = "geo:json needs an object as value";
+      LM_TMP(("getGeoJson: error 2"));
       return false;
     }
 
@@ -160,12 +144,37 @@ static bool getGeoJson
     caP->valueBson(bo, "", false);
     geoJson->appendElements(getObjectFieldF(bo.obj(), ENT_ATTRS_VALUE));
 
+    LM_TMP(("getGeoJson: OK 2"));
+    return true;
+  }
+
+
+  if ((apiVersion == V1) || (caP->type == GEO_POINT))
+  {
+    double  aLat;
+    double  aLong;
+
+    LM_TMP(("apiVersion: %d", apiVersion));
+    LM_TMP(("caP->type: '%s'", caP->type.c_str()));
+
+    if (!string2coords(caP->stringValue, aLat, aLong))
+    {
+      *errDetail = "geo coordinates format error [see Orion user manual]: " + caP->stringValue;
+      LM_TMP(("getGeoJson: error 1"));
+      return false;
+    }
+
+    geoJson->append("type", "Point");
+    geoJson->append("coordinates", BSON_ARRAY(aLong << aLat));
+
+    LM_TMP(("getGeoJson: OK 1"));
     return true;
   }
 
   // geo:line, geo:box and geo:polygon use vector of coordinates
   if (!stringArray2coords(caP, &coordLat, &coordLong, errDetail))
   {
+    LM_TMP(("getGeoJson: error 3"));
     return false;
   }
 
@@ -176,6 +185,7 @@ static bool getGeoJson
     if (coordLat.size() != 2)
     {
       *errDetail = "geo:box uses exactly 2 coordinates";
+      LM_TMP(("getGeoJson: error 4"));
       return false;
     }
 
@@ -187,6 +197,7 @@ static bool getGeoJson
     if (!orderCoordsForBox(&minLat, &maxLat, &minLon, &maxLon, coordLat[0], coordLat[1], coordLong[0], coordLong[1]))
     {
       *errDetail = "geo:box coordinates are not defining an actual box";
+      LM_TMP(("getGeoJson: error 5"));
       return false;
     }
 
@@ -199,6 +210,7 @@ static bool getGeoJson
     geoJson->append("type", "Polygon");
     geoJson->append("coordinates", BSON_ARRAY(ba.arr()));
 
+    LM_TMP(("getGeoJson: OK 3"));
     return true;
   }
 
@@ -214,12 +226,14 @@ static bool getGeoJson
     if (coordLat.size() < 2)
     {
       *errDetail = "geo:line uses at least 2 coordinates";
+      LM_TMP(("getGeoJson: error 6"));
       return false;
     }
 
     geoJson->append("type", "LineString");
     geoJson->append("coordinates", ba.arr());
 
+    LM_TMP(("getGeoJson: OK 4"));
     return true;
   }
 
@@ -229,6 +243,7 @@ static bool getGeoJson
     if (coordLat.size() < 4)
     {
       *errDetail = "geo:polygon uses at least 4 coordinates";
+      LM_TMP(("getGeoJson: error 7"));
       return false;
     }
 
@@ -238,18 +253,21 @@ static bool getGeoJson
     if ((coordLat[0] != coordLat[n-1]) || (coordLong[0] != coordLong[n-1]))
     {
       *errDetail = "geo:polygon first and last coordinates must match";
+      LM_TMP(("getGeoJson: error 8"));
       return false;
     }
 
     geoJson->append("type", "Polygon");
     geoJson->append("coordinates", BSON_ARRAY(ba.arr()));
 
+    LM_TMP(("getGeoJson: OK 5"));
     return true;
   }
 
   LM_E(("Runtime Error (attribute detected as location but unknown type: %s)", caP->type.c_str()));
   *errDetail = "error processing geo location attribute, see log traces";
 
+  LM_TMP(("getGeoJson: error 9"));
   return false;
 }
 
@@ -382,6 +400,7 @@ bool processLocationAtUpdateAttribute
     //
     if (*currentLocAttrName != targetAttr->name)
     {
+      LM_TMP(("currentLocAttrName(='%s') != targetAttr->name(='%s')", currentLocAttrName->c_str(), targetAttr->name.c_str()));
       *errDetail = "attempt to define a geo location attribute [" + targetAttr->name + "]" +
                    " when another one has been previously defined [" + *currentLocAttrName + "]";
 
@@ -472,6 +491,7 @@ bool processLocationAtAppendAttribute
     /* Case 1a: there is a previous location attribute -> error */
     if (currentLocAttrName->length() != 0)
     {
+      LM_TMP(("There already is a location attribute, namely: '%s'", currentLocAttrName->c_str()));
       *errDetail = "attempt to define a geo location attribute [" + targetAttr->name + "]" +
                    " when another one has been previously defined [" + *currentLocAttrName + "]";
 
@@ -497,8 +517,9 @@ bool processLocationAtAppendAttribute
   else if (!actualAppend && (locationString.length() > 0))
   {
     /* Case 2a: there is a previous (which different name) location attribute -> error */
-    if (*currentLocAttrName != targetAttr->name)
+    if ((*currentLocAttrName != targetAttr->name) && (*currentLocAttrName != ""))
     {
+      LM_TMP(("currentLocAttrName(='%s') != targetAttr->name(='%s')", currentLocAttrName->c_str(), targetAttr->name.c_str()));
       *errDetail = "attempt to define a geo location attribute [" + targetAttr->name + "]" +
                    " when another one has been previously defined [" + *currentLocAttrName + "]";
 
@@ -514,6 +535,7 @@ bool processLocationAtAppendAttribute
     {
       if (!getGeoJson(targetAttr, geoJson, &subErr, apiVersion))
       {
+        LM_TMP(("getGeoJson FAILED"));
         *errDetail = "error parsing location attribute for existing attribute: " + subErr;
         oe->fill(SccBadRequest, *errDetail, "BadRequest");
         return false;

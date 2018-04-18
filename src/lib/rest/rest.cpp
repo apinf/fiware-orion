@@ -1246,7 +1246,7 @@ static int connectionTreat
       clock_gettime(CLOCK_REALTIME, &ciP->reqStartTime);
     }
 
-    // LM_TMP(("--------------------- Serving request %s %s -----------------", method, url));
+    LM_TMP(("--------------------- Serving request %s %s -----------------", method, url));
     LM_T(LmtRequest, (""));
     // WARNING: This log message below is crucial for the correct function of the Behave tests - CANNOT BE REMOVED
     LM_T(LmtRequest, ("--------------------- Serving request %s %s -----------------", method, url));
@@ -1401,6 +1401,7 @@ static int connectionTreat
     return MHD_YES;
   }
 
+  LM_TMP(("Incoming payload: %s", ciP->payload));
   //
   // 3. Finally, serve the request (unless an error has occurred)
   //
