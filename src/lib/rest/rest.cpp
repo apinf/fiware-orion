@@ -569,6 +569,10 @@ static void requestCompleted
   std::string      spath    = (ciP->servicePathV.size() > 0)? ciP->servicePathV[0] : "";
   struct timespec  reqEndTime;
 
+  LM_TMP(("After %s %s:", ciP->method.c_str(), ciP->url.c_str()));
+  extern void compoundSaveReport(void);
+  compoundSaveReport();
+  
   if ((ciP->payload != NULL) && (ciP->payload != static_buffer))
   {
     free(ciP->payload);
@@ -1246,7 +1250,7 @@ static int connectionTreat
       clock_gettime(CLOCK_REALTIME, &ciP->reqStartTime);
     }
 
-    // LM_TMP(("--------------------- Serving request %s %s -----------------", method, url));
+    LM_TMP(("--------------------- Serving request %s %s -----------------", method, url));
     LM_T(LmtRequest, (""));
     // WARNING: This log message below is crucial for the correct function of the Behave tests - CANNOT BE REMOVED
     LM_T(LmtRequest, ("--------------------- Serving request %s %s -----------------", method, url));

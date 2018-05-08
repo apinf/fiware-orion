@@ -52,6 +52,81 @@ using namespace orion;
 
 
 
+#if 0
+typedef struct CompoundSave
+{
+  std::string                name;
+  ContextAttribute*          aP;
+  orion::CompoundValueNode*  compoundP;
+  ContextAttribute*          aParentP;
+  std::string                state;
+} CompoundSave;
+
+static CompoundSave compoundSaveV[100];
+static int          compoundSaveIx = 0;
+#endif
+
+void compoundSaveInit(void)
+{
+  for (int ix = 0; ix < 100; ix++)
+    compoundSaveV[ix].state = "unused";
+}
+
+void compoundSaveReport(void)
+{
+#if 0
+  LM_TMP(("%-20s %-10s  %-10s  %-10s  %s", "name", "attrP", "compoundP", "from Attr", "state"));
+  for (int ix = 0; ix < compoundSaveIx; ix++)
+  {
+    LM_TMP(("%-20s 0x%08x  0x%08x  0x%08x  %s",
+            compoundSaveV[ix].name.c_str(),
+            compoundSaveV[ix].aP,
+            compoundSaveV[ix].compoundP,
+            compoundSaveV[ix].aParentP,
+            compoundSaveV[ix].state.c_str()));
+    // if (compoundSaveV[ix].compoundP != NULL)
+    // {
+    //   delete compoundSaveV[ix].compoundP;
+    //   compoundSaveV[ix].compoundP = NULL;
+    // }
+  }
+#endif
+}
+
+static void compoundSave(ContextAttribute* aP, ContextAttribute* aParentP)
+{
+  CompoundSave* csP = &compoundSaveV[compoundSaveIx];
+
+  csP->aP        = aP;
+  csP->name      = aP->name;
+  csP->compoundP = aP->compoundValueP;
+  csP->aParentP  = aParentP;
+  csP->state     = "used";
+
+  ++compoundSaveIx;
+}
+
+static void compoundUnsave(ContextAttribute* aP)
+{
+  if (aP->compoundValueP != NULL)
+  {
+    for (int ix = 0; ix < compoundSaveIx; ix++)
+    {
+      if (aP->compoundValueP == compoundSaveV[ix].compoundP)
+      {
+        if (compoundSaveV[ix].state == "used")
+          compoundSaveV[ix].state = "usedAndFreed";
+        else if (compoundSaveV[ix].state == "unused")
+          compoundSaveV[ix].state = "freedWhenUnused";
+        else
+          compoundSaveV[ix].state = "freedWhen-" + compoundSaveV[ix].state;
+      }
+    }
+  }
+}
+
+
+
 /* ****************************************************************************
 *
 * ContextAttribute::bsonAppendAttrValue -
@@ -253,14 +328,23 @@ ContextAttribute::ContextAttribute(ContextAttribute* caP, bool useDefaultType)
   stringValue           = caP->stringValue;
   numberValue           = caP->numberValue;
   boolValue             = caP->boolValue;
-  compoundValueP        = caP->compoundValueP;
-  caP->compoundValueP   = NULL;
   found                 = caP->found;
   skip                  = false;
   typeGiven             = caP->typeGiven;
   onlyValue             = caP->onlyValue;
   previousValue         = NULL;
 
+  if (caP->compoundValueP != NULL)
+  {
+    compoundValueP = caP->compoundValueP->clone();
+    LM_TMP(("Cloned compoundValue for attr '%s' to %p (cloned original at %p)", name.c_str(), compoundValueP, caP->compoundValueP));
+    compoundSave(this, caP);
+  }
+  else
+  {
+    compoundValueP = NULL;
+  }
+  
   creDate = caP->creDate;
   modDate = caP->modDate;
 
@@ -1189,6 +1273,8 @@ void ContextAttribute::present(const std::string& indent, int ix)
 */
 void ContextAttribute::release(void)
 {
+  LM_TMP(("Releasing attr %s at %p (compound: %p)", name.c_str(), this, compoundValueP));
+  compoundUnsave(this);
   if (compoundValueP != NULL)
   {
     delete compoundValueP;

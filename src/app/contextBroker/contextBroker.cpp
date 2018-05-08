@@ -823,6 +823,8 @@ int main(int argC, char* argV[])
   paConfig("valid log level strings",       validLogLevels);
   paConfig("default value",                 "-logLevel", "WARN");
 
+  extern void compoundSaveInit(void);
+  compoundSaveInit();
 
   //
   // If option '-fg' is set, print traces to stdout as well, otherwise, only to file
