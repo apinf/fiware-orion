@@ -70,9 +70,9 @@ void compoundSaveInit(void)
     compoundSaveV[ix].state = "unused";
 }
 
+#if 0
 void compoundSaveReport(void)
 {
-#if 0
   LM_TMP(("%-20s %-10s  %-10s  %-10s  %s", "name", "attrP", "compoundP", "from Attr", "state"));
   for (int ix = 0; ix < compoundSaveIx; ix++)
   {
@@ -88,8 +88,8 @@ void compoundSaveReport(void)
     //   compoundSaveV[ix].compoundP = NULL;
     // }
   }
-#endif
 }
+#endif
 
 static void compoundSave(ContextAttribute* aP, ContextAttribute* aParentP)
 {
@@ -335,7 +335,6 @@ ContextAttribute::ContextAttribute(ContextAttribute* caP, bool useDefaultType)
   if (caP->compoundValueP != NULL)
   {
     compoundValueP = caP->compoundValueP->clone();
-    LM_TMP(("Cloned compoundValue for attr '%s' to %p (cloned original at %p)", name.c_str(), compoundValueP, caP->compoundValueP));
     compoundSave(this, caP);
   }
   else
@@ -1271,7 +1270,6 @@ void ContextAttribute::present(const std::string& indent, int ix)
 */
 void ContextAttribute::release(void)
 {
-  LM_TMP(("Releasing attr %s at %p (compound: %p)", name.c_str(), this, compoundValueP));
   compoundUnsave(this);
   if (compoundValueP != NULL)
   {
