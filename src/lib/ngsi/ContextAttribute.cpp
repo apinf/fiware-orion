@@ -52,7 +52,6 @@ using namespace orion;
 
 
 
-#if 0
 typedef struct CompoundSave
 {
   std::string                name;
@@ -64,7 +63,6 @@ typedef struct CompoundSave
 
 static CompoundSave compoundSaveV[100];
 static int          compoundSaveIx = 0;
-#endif
 
 void compoundSaveInit(void)
 {
