@@ -1016,6 +1016,7 @@ unsigned int decimalDigits(double d)
 }
 
 
+
 /* ****************************************************************************
 *
 * toString
@@ -1026,6 +1027,7 @@ template <> std::string toString(double f)
 {
   std::ostringstream ss;
 
+  LM_TMP(("In toString: %f", f));
   unsigned int digits = decimalDigits(f);
   if (digits > 0)
   {
@@ -1034,8 +1036,10 @@ template <> std::string toString(double f)
 
   ss << f;
 
+  LM_TMP(("From toString: %s", ss.str().c_str()));
   return ss.str();
 }
+
 
 
 /*****************************************************************************
