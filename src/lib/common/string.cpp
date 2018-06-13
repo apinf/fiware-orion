@@ -922,122 +922,48 @@ bool str2double(const char* s, double* dP)
 }
 
 
-
 /* ****************************************************************************
 *
-* decimalDigits
-*
-* This function counts the number of decimal digits of a given float, to a maximum of
-* PRECISION_DIGITS. The algorithm is inspired in http://stackoverflow.com/a/1083316/1485926
-* but with a "cutting condition" needed due to float representation may have an infinite
-* number of decimals, e.g. 3.14 could be internally coded as 3.1399999.
-*
-* FIXME #2425: this function is not perfect and could be improved. For example,
-* considering the following
-*
-*   "A1":  42.9,
-*   "A2":  42.99,
-*   "A3":  42.999,
-*   "A4":  42.9999,
-*   "A5":  42.99999,
-*   "A6":  42.999999,
-*   "A7":  42.9999999,
-*   "A8":  42.99999999,
-*   "A9":  42.999999999,
-*   "A10": 42.9999999999,,
-*
-*   "A1":  42.1,
-*   "A2":  42.01,
-*   "A3":  42.001,
-*   "A4":  42.0001,
-*   "A5":  42.00001,
-*   "A6":  42.000001,
-*   "A7":  42.0000001,
-*   "A8":  42.00000001,
-*   "A9":  42.000000001,
-*   "A10": 42.0000000001,
-*
-* what we get is:
-*
-*   "A1":  42.9,
-*   "A2":  42.99,
-*   "A3":  42.999,
-*   "A4":  42.9999,
-*   "A5":  42.99999,
-*   "A6":  42.999999000, (fail)
-*   "A7":  42.999999900, (fail)
-*   "A8":  42.999999990, (fail)
-*   "A9":  42.999999999,
-*   "A10": 43.000000000, (fail, although probably not due to this function but the caller)
-*
-*   "A1":  42.1,
-*   "A2":  42.01,
-*   "A3":  42.001,
-*   "A4":  42.0001,
-*   "A5":  42.00001,
-*   "A6":  42.000001000, (fail)
-*   "A7":  42.000000100, (fail)
-*   "A8":  42.000000010, (fail)
-*   "A9":  42,           (fail)
-*   "A10": 42,
-*
+* toString - 
 */
-unsigned int decimalDigits(double d)
+char* toString(double number, char* buf, int bufSize)
 {
-  unsigned int digits = 0;
+  long long  intPart   = (long long) number;
+  double     diff      = number - intPart;
+  bool       isInteger = false;
 
-  double intPart;
-  double decimalPart = fabs(modf(d, &intPart));
+  // abs value for 'diff'
+  diff = (diff < 0)? -diff : diff;
 
-  while (decimalPart > PRECISION)
+  if (diff > 0.9999999998)
   {
-    digits++;
-    decimalPart *= 10;
-    decimalPart = modf(decimalPart, &intPart);
-    if (fabs(1 - decimalPart ) < PRECISION)
-    {
-      // Using a greater threshold (e.g. 0.01) would cause rounding errors,
-      // e.g. 42.9999 -> 43. This can be easily checked with the
-      // cases/2176_not_print_spurious_decimals/one_to_nine_decimals.test test
-      // (try to use PRECISION * 10 and check how the test fails).
-      //
-      break;
-    }
+    intPart += 1;
+    isInteger = true;
+  }
+  else if (diff < 0.000000001)  // it is considered an integer
+  {
+    isInteger = true;
   }
 
-  if (digits > PRECISION_DIGITS)
+  if (isInteger)
   {
-    return PRECISION_DIGITS;
+    snprintf(buf, bufSize, "%lld", intPart);
   }
   else
   {
-    return digits;
-  }
-}
+    snprintf(buf, bufSize, "%.9f", number);
 
-
-
-/* ****************************************************************************
-*
-* toString
-*
-* Specialized version of the template for the double type
-*/
-template <> std::string toString(double f)
-{
-  std::ostringstream ss;
-
-  LM_TMP(("In toString: %f", f));
-  unsigned int digits = decimalDigits(f);
-  if (digits > 0)
-  {
-    ss << std::fixed << std::setprecision(digits);
+    // Clear out any unwanted trailing zeroes
+    char* last = &buf[strlen(buf) - 1];
+    
+    while ((*last == '0') && (last != buf))
+    {
+      *last = 0;
+      --last;
+    }
   }
 
-  ss << f;
-
-  LM_TMP(("From toString: %s", ss.str().c_str()));
-  return ss.str();
+  return buf;
 }
 
 

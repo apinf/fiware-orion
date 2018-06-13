@@ -450,7 +450,8 @@ std::string Metadata::toStringValue(void) const
     }
     else // regular number
     {
-      return toString(numberValue);
+      char numberBuffer[STRING_SIZE_FOR_DOUBLE];
+      return toString(numberValue, numberBuffer, sizeof(numberBuffer));
     }    
     break;
 
@@ -512,7 +513,8 @@ std::string Metadata::toJson(bool isLastElement)
     }
     else // regular number
     {
-      effectiveValue = toString(numberValue);
+      char numberBuffer[STRING_SIZE_FOR_DOUBLE];
+      effectiveValue = toString(numberValue, numberBuffer, sizeof(numberBuffer));
     }
     out += JSON_VALUE_NUMBER("value", effectiveValue);
   }

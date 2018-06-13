@@ -565,6 +565,7 @@ std::string ContextAttribute::renderAsJsonObject
     {
       std::string effectiveValue  = "";
       bool        withoutQuotes   = false;
+      char        numberBuffer[STRING_SIZE_FOR_DOUBLE];
 
       switch (valueType)
       {
@@ -584,7 +585,7 @@ std::string ContextAttribute::renderAsJsonObject
         }
         else // regular number
         {
-          effectiveValue = toString(numberValue);
+          effectiveValue = toString(numberValue, numberBuffer, sizeof(numberBuffer));
           withoutQuotes  = true;
         }
         break;
@@ -678,6 +679,7 @@ std::string ContextAttribute::render
   bool         valueRendered          = (compoundValueP != NULL) || (omitValue == false) || (request == RtUpdateContextResponse);
   bool         commaAfterContextValue = metadataVector.size() != 0;
   bool         commaAfterType         = valueRendered;
+  char         numberBuffer[STRING_SIZE_FOR_DOUBLE];
 
   if (asJsonObject)
   {
@@ -713,7 +715,7 @@ std::string ContextAttribute::render
         }
         else // regular number
         {
-          effectiveValue = toString(numberValue);
+          effectiveValue = toString(numberValue, numberBuffer, sizeof(numberBuffer));
           withoutQuotes  = true;
         }
         break;
@@ -816,7 +818,9 @@ std::string ContextAttribute::toJson
       }
       else // regular number
       {
-        out += toString(numberValue);
+        char numberBuffer[STRING_SIZE_FOR_DOUBLE];
+
+        out += toString(numberValue, numberBuffer, sizeof(numberBuffer));
       }
     }
     else if (valueType == orion::ValueTypeString)
@@ -881,7 +885,9 @@ std::string ContextAttribute::toJson
       }
       else // regular number
       {
-        out += JSON_VALUE_NUMBER("value", toString(numberValue));
+        char numberBuffer[STRING_SIZE_FOR_DOUBLE];
+
+        out += JSON_VALUE_NUMBER("value", toString(numberValue, numberBuffer, sizeof(numberBuffer)));
       }
     }
     else if (valueType == orion::ValueTypeString)
@@ -971,7 +977,9 @@ std::string ContextAttribute::toJsonAsValue
         }
         else // regular number
         {
-          out = toString(numberValue);
+          char numberBuffer[STRING_SIZE_FOR_DOUBLE];
+
+          out = toString(numberValue, numberBuffer, sizeof(numberBuffer));
         }
         break;
 
@@ -1224,6 +1232,8 @@ std::string ContextAttribute::getName(void)
 */
 std::string ContextAttribute::getValue(void) const
 {
+  char numberBuffer[STRING_SIZE_FOR_DOUBLE];
+
   switch (valueType)
   {
   case orion::ValueTypeString:
@@ -1231,7 +1241,7 @@ std::string ContextAttribute::getValue(void) const
     break;
 
   case orion::ValueTypeNumber:
-    return toString(numberValue);
+    return toString(numberValue, numberBuffer, sizeof(numberBuffer));
     break;
 
   case orion::ValueTypeBoolean:
