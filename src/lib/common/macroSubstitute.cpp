@@ -51,7 +51,9 @@ static void attributeValue(std::string* valueP, const std::vector<ContextAttribu
     }
     else if (vec[ix]->valueType == orion::ValueTypeNumber)
     {
-      *valueP = toString(vec[ix]->numberValue);
+      char numberBuffer[STRING_SIZE_FOR_DOUBLE];
+
+      *valueP = toString(vec[ix]->numberValue, numberBuffer, sizeof(numberBuffer));
     }
     else if (vec[ix]->valueType == orion::ValueTypeBoolean)
     {

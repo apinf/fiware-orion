@@ -689,8 +689,11 @@ std::string CompoundValueNode::render(ApiVersion apiVersion, bool noComma, bool 
   }
   else if (valueType == orion::ValueTypeNumber)
   {
+    char numberBuffer[STRING_SIZE_FOR_DOUBLE];
+
     LM_T(LmtCompoundValueRender, ("I am a number (%s)", name.c_str()));
-    out = valueTag(key, toString(numberValue), jsonComma, container->valueType == orion::ValueTypeVector, true);
+    toString(numberValue, numberBuffer, sizeof(numberBuffer));
+    out = valueTag(key, numberBuffer, jsonComma, container->valueType == orion::ValueTypeVector, true);
   }
   else if (valueType == orion::ValueTypeBoolean)
   {
@@ -864,14 +867,16 @@ std::string CompoundValueNode::toJson(bool isLastElement, bool comma)
   }
   else if (valueType == orion::ValueTypeNumber)
   {
+    char numberBuffer[STRING_SIZE_FOR_DOUBLE];
+
     LM_T(LmtCompoundValueRender, ("I am a Number (%s)", name.c_str()));
     if (container->valueType == orion::ValueTypeVector)
     {
-      out = JSON_NUMBER(toString(numberValue));
+      out = JSON_NUMBER(toString(numberValue, numberBuffer, sizeof(numberBuffer)));
     }
     else
     {
-      out = JSON_STR(key) + ":" + JSON_NUMBER(toString(numberValue));
+      out = JSON_STR(key) + ":" + JSON_NUMBER(toString(numberValue, numberBuffer, sizeof(numberBuffer)));
     }
   }
   else if (valueType == orion::ValueTypeBoolean)

@@ -83,8 +83,12 @@ std::string getRegistrations
 
   if ((ciP->uriParamOptions["count"]))
   {
+    char countBuffer[STRING_SIZE_FOR_DOUBLE];
+
+    snprintf(countBuffer, sizeof(countBuffer), "%lld", count);
+
     ciP->httpHeader.push_back(HTTP_FIWARE_TOTAL_COUNT);
-    ciP->httpHeaderValue.push_back(toString(count));
+    ciP->httpHeaderValue.push_back(countBuffer);
   }
 
   TIMED_RENDER(out = vectorToJson(registrationV));

@@ -22,15 +22,15 @@
 *
 * Author: Orion dev team
 */
-
-#include "common/JsonHelper.h"
-#include "common/string.h"
-#include "common/limits.h"
-
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <iomanip>
+
+#include "common/JsonHelper.h"
+#include "common/string.h"
+#include "common/limits.h"
 
 
 
@@ -207,7 +207,7 @@ void JsonHelper::addRaw(const std::string& key, const std::string& value)
 
 /* ****************************************************************************
 *
-* JsonHelper::addNumber -
+* JsonHelper::addNumber(long long) -
 */
 void JsonHelper::addNumber(const std::string& key, long long value)
 {
@@ -222,6 +222,97 @@ void JsonHelper::addNumber(const std::string& key, long long value)
 
 
 
+/* ****************************************************************************
+*
+* decimalDigits
+*
+* This function counts the number of decimal digits of a given float, to a maximum of
+* PRECISION_DIGITS. The algorithm is inspired in http://stackoverflow.com/a/1083316/1485926
+* but with a "cutting condition" needed due to float representation may have an infinite
+* number of decimals, e.g. 3.14 could be internally coded as 3.1399999.
+*
+* FIXME #2425: this function is not perfect and could be improved. For example,
+* considering the following
+*
+*   "A1":  42.9,
+*   "A2":  42.99,
+*   "A3":  42.999,
+*   "A4":  42.9999,
+*   "A5":  42.99999,
+*   "A6":  42.999999,
+*   "A7":  42.9999999,
+*   "A8":  42.99999999,
+*   "A9":  42.999999999,
+*   "A10": 42.9999999999,,
+*
+*   "A1":  42.1,
+*   "A2":  42.01,
+*   "A3":  42.001,
+*   "A4":  42.0001,
+*   "A5":  42.00001,
+*   "A6":  42.000001,
+*   "A7":  42.0000001,
+*   "A8":  42.00000001,
+*   "A9":  42.000000001,
+*   "A10": 42.0000000001,
+*
+* what we get is:
+*
+*   "A1":  42.9,
+*   "A2":  42.99,
+*   "A3":  42.999,
+*   "A4":  42.9999,
+*   "A5":  42.99999,
+*   "A6":  42.999999000, (fail)
+*   "A7":  42.999999900, (fail)
+*   "A8":  42.999999990, (fail)
+*   "A9":  42.999999999,
+*   "A10": 43.000000000, (fail, although probably not due to this function but the caller)
+*
+*   "A1":  42.1,
+*   "A2":  42.01,
+*   "A3":  42.001,
+*   "A4":  42.0001,
+*   "A5":  42.00001,
+*   "A6":  42.000001000, (fail)
+*   "A7":  42.000000100, (fail)
+*   "A8":  42.000000010, (fail)
+*   "A9":  42,           (fail)
+*   "A10": 42,
+*
+*/
+static unsigned int decimalDigits(double d)
+{
+  unsigned int digits = 0;
+
+  double intPart;
+  double decimalPart = fabs(modf(d, &intPart));
+
+  while (decimalPart > PRECISION)
+  {
+    digits++;
+    decimalPart *= 10;
+    decimalPart = modf(decimalPart, &intPart);
+    if (fabs(1 - decimalPart ) < PRECISION)
+    {
+      // Using a greater threshold (e.g. 0.01) would cause rounding errors,
+      // e.g. 42.9999 -> 43. This can be easily checked with the
+      // cases/2176_not_print_spurious_decimals/one_to_nine_decimals.test test
+      // (try to use PRECISION * 10 and check how the test fails).
+      //
+      break;
+    }
+  }
+
+  if (digits > PRECISION_DIGITS)
+  {
+    return PRECISION_DIGITS;
+  }
+  else
+  {
+    return digits;
+  }
+}
 /* ****************************************************************************
 *
 * JsonHelper::addFloat -
@@ -247,6 +338,7 @@ void JsonHelper::addFloat(const std::string& key, float  value)
 
   empty = false;
 }
+
 
 
 
